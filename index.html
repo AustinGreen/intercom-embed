@@ -1,8 +1,6 @@
 <html>
 <head>
   <style>
-    .intercom-borderless-frame, .intercom-gradient { display: none !important; }
-
     #background {
       position: absolute;
       top: 0;
@@ -28,20 +26,53 @@
   <script>(function(){var w=window;var ic=w.Intercom;if(typeof ic==='function'){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/nvy8o3hf';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
 
   <script>
-    var messengerClassName = ".intercom-messenger-frame"
+    var borderlessFrameSelector = ".intercom-borderless-frame";
+    var dismissBorderlessSelector = ".intercom-borderless-dismiss-button";
 
-    var observer = new MutationObserver(function() {
-      var element = document.querySelector(messengerClassName);
-      var size = element ? element.scrollWidth : 0;
-      var expanded = size > 100;
+    var notificationsFrameSelector = ".intercom-notifications-frame";
+    var dismissNotificationsSelector = ".intercom-notifications-dismiss-button";
 
-      parent.postMessage({ expanded: expanded }, "*");
-    });
+    var frameSelectors = [
+      ".intercom-messenger-frame",
+      borderlessFrameSelector,
+      notificationsFrameSelector
+    ];
 
-    observer.observe(document.body, { attributes: true, subtree: true });
+    function dismissFrame(frameSelector, dismissSelector) {
+      var frame = document.querySelector(frameSelector);
+      if (frame) {
+        var button = frame.contentDocument.querySelector(dismissSelector);
+        if(button) {
+          button.click();
+        }
+      }
+    }
+
+    function isExpanded() {
+      return frameSelectors.some(function(selector) {
+        var element = document.querySelector(selector);
+        var size = element ? element.scrollWidth : 0;
+        return size > 100;
+      });
+    }
+
+    new MutationObserver(function() {
+      parent.postMessage({ expanded: isExpanded() }, "*");
+    }).observe(
+      document.body,
+      { attributes: true, subtree: true }
+    );
 
     document.addEventListener("click", function(event) {
-      event.target.id === "background" && Intercom("hide");
+      if(event.target.id === "background") {
+        Intercom("hide");
+        dismissFrame(borderlessFrameSelector, dismissBorderlessSelector);
+        dismissFrame(notificationsFrameSelector, dismissNotificationsSelector);
+      }
+    });
+
+    window.addEventListener("message", function(event) {
+      Intercom(event.data)
     });
   </script>
 </body>
